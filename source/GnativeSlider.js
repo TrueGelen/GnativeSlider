@@ -1,10 +1,10 @@
 class GnativeSlider {
 	constructor(settings) {
 		this.defaultSettings = {
+			displayToShow: 'block',
 			loop: true,
-			items: undefined,
+			itemsContainer: undefined,
 			nav: true,
-			navContainer: undefined,
 			btnNext: undefined,
 			btnPrev: undefined,
 			showClass: undefined,
@@ -12,23 +12,29 @@ class GnativeSlider {
 			dotsContainer: 'undefined',
 			exampleOfDot: undefined,
 			showDotsClass: undefined,
-			items: 1,
+			itemsCount: 1,
 			responsive: false,
 			itemsAtScreen: {}
 		}
 
 		this.finalSettings = this.mergeSettings(this.defaultSettings, settings)
+		this.responsiveMap = this.getResponsiveMap()
 
-		this.items = document.querySelectorAll(this.finalSettings.items)
+		this.itemsContainer = document.querySelector(this.finalSettings.itemsContainer)
+		this.items = document.querySelector(this.finalSettings.itemsContainer).children
+		this.itemsCount = this.finalSettings.itemsCount
+		this.activeItemIndex = 0
+
+		this.isNav = this.finalSettings.nav
 		this.btnNext = document.querySelector(this.finalSettings.btnNext)
 		this.btnPrev = document.querySelector(this.finalSettings.btnPrev)
-		this.i = []
 
+		this.ArrActiveDots = [0]
 		this.dotsContainer = document.querySelector(this.finalSettings.dotsContainer)
 		this.exampleOfDot = document.querySelector(this.finalSettings.exampleOfDot)
+		this.isDots = this.finalSettings.dots
 
-		this.getIAndCreateDots()
-
+		this.createSlider()
 		this.run()
 	}
 
@@ -37,19 +43,83 @@ class GnativeSlider {
 		console.log('debug this.btnNext:===================\n', this.btnNext)
 		console.log('debug this.btnPrev:===================\n', this.btnPrev)
 		console.log('debug this.finalSettings.showClass:===================\n', this.finalSettings.showClass)
-		console.log('debug this.i:===================\n', this.i)
 		console.log('debug this.dotsContainer:===================\n', this.dotsContainer)
 		console.log('debug this.exampleOfDot:===================\n', this.exampleOfDot)
 		console.log('debug this.finalSettings.showDotsClass:===================\n', this.finalSettings.showDotsClass)
 		console.log('debug this.finalSettings:===================\n', this.finalSettings)
+		console.log('debug this.responsiveMap:===================\n', this.responsiveMap)
+	}
+
+	isNode(node) {
+		return node && (node.nodeType === 1 || node.nodeType == 11)
 	}
 
 	mergeSettings(defaultSettings, settings) {
 		return Object.assign(defaultSettings, settings)
 	}
 
-	hasDots() {
-		if (this.finalSettings.dots) {
+	isResponsive() {
+		if (this.finalSettings.responsive) {
+			for (let key in this.finalSettings.itemsAtScreen) {
+				if (key > window.innerWidth)
+					return true
+			}
+			return false
+		} else
+			return false
+	}
+
+	setIsNav(widthOfScreen = undefined) {
+		if (widthOfScreen !== undefined) {
+			if (this.finalSettings.itemsAtScreen[widthOfScreen].nav !== undefined)
+				this.isNav = this.finalSettings.itemsAtScreen[widthOfScreen].nav
+		} else {
+			this.isNav = this.finalSettings.nav
+		}
+	}
+
+	//for getting this.itemsCount and this.activeItemIndex
+	//todo may change the getting this.activeItemIndex for resize
+	setItemsCount(isResponsive = false, widthOfScreen = undefined) {
+		if (isResponsive) {
+			if (typeof (this.finalSettings.itemsAtScreen[widthOfScreen].itemsCount) !== "number")
+				return false
+			this.itemsCount = this.finalSettings.itemsAtScreen[widthOfScreen].itemsCount
+			this.activeItemIndex = 0
+		} else {
+			this.itemsCount = this.finalSettings.itemsCount
+			this.activeItemIndex = 0
+		}
+	}
+
+	//on button, swipe but not dots
+	itemsBehavior(directionToggle, removeItemInd, addItemInd) {
+		this.items[removeItemInd].classList.remove(this.finalSettings.showClass)
+		this.items[addItemInd].classList.add(this.finalSettings.showClass)
+
+		if (directionToggle)
+			this.itemsContainer.append(this.items[removeItemInd])
+		else
+			this.itemsContainer.prepend(this.items[addItemInd])
+	}
+
+	createItems() {
+		for (let i = 0; i < this.items.length; i++) {
+			this.items[i].classList.remove(this.finalSettings.showClass)
+		}
+		/* this.items.forEach(item => {
+			item.classList.remove(this.finalSettings.showClass)
+		}) */
+
+		for (let i = 0; i < this.itemsCount; i++) {
+			this.items[i].classList.add(this.finalSettings.showClass)
+		}
+	}
+
+	//todo may to do the function of check for a correct data
+	/*isDots(widthOfScreen = undefined) {
+
+		 if (this.finalSettings.dots) {
 			if (this.dotsContainer === null) {
 				throw new Error("dotsContainer is null. If you want to have container of" +
 					" dots you must pass the option {dotsContainer: 'path in DOM'}")
@@ -65,132 +135,191 @@ class GnativeSlider {
 			}
 			return true
 		}
-		return false
+		return false 
+	}*/
+
+	setIsDots(widthOfScreen = undefined) {
+		if (widthOfScreen !== undefined) {
+			if (this.finalSettings.itemsAtScreen[widthOfScreen].dots !== undefined)
+				this.isDots = this.finalSettings.itemsAtScreen[widthOfScreen].dots
+		} else {
+			this.isDots = this.finalSettings.dots
+		}
 	}
 
-	getIAndCreateDots() {
-		this.hasDots()
-		while (this.dotsContainer.firstChild) {
-			this.dotsContainer.firstChild.remove();
+	setArrActiveDots() {
+		this.ArrActiveDots = [0]
+		let total = 0
+		for (let i = 0; i < this.items.length; i += this.itemsCount) {
+			total += this.itemsCount
+			if (total <= this.items.length - 1)
+				this.ArrActiveDots.push(total)
 		}
 
-		this.items.forEach((item, ind) => {
-			if (item.classList.contains(this.finalSettings.showClass)) {
-				this.i.push(ind)
-				if (this.hasDots()) {
-					this.createDots(true)
-				}
-			} else {
-				this.i = 0
-				if (this.hasDots()) {
-					this.createDots(false)
-				}
-			}
-		})
+		if (this.ArrActiveDots[this.ArrActiveDots.length - 1] !== this.items.length - this.itemsCount) {
+			this.ArrActiveDots[this.ArrActiveDots.length - 1] = this.items.length - this.itemsCount
+		}
+		//console.log("setArrActiveDots", this.ArrActiveDots)
 	}
 
-	createDots(bool) {
-		let clone
-		if (bool) {
-			clone = this.exampleOfDot.cloneNode(true)
-			clone.classList.add(this.finalSettings.showDotsClass)
+	dotsBehavior() {
+		//&& !this.dotsContainer.childNodes[i].classList.contains(this.finalSettings.showDotsClass)
+		if (this.ArrActiveDots.length === 1) {
+			this.dotsContainer.childNodes[this.activeItemIndex].classList.remove(this.finalSettings.showDotsClass)
+			this.dotsContainer.childNodes[this.activeItemIndex + 1].classList.add(this.finalSettings.showDotsClass)
 		}
 		else {
-			clone = this.exampleOfDot.cloneNode(true)
-		}
-		this.dotsContainer.appendChild(clone)
-	}
-
-	oneSlideToggleItems(toggle, ind) {
-		console.log('testSlide oneSlideToggleItems', toggle, ind)
-		this.items[ind].classList.remove(this.finalSettings.showClass)
-		if (toggle) {
-			ind++
-			if (ind > this.items.length - 1)
-				ind = 0
-		} else {
-			ind--
-			if (ind < 0)
-				ind = this.items.length - 1
-		}
-		this.items[ind].classList.add(this.finalSettings.showClass)
-	}
-
-	oneSlideToggleDots(toggle, ind) {
-		console.log('testSlide oneSlideToggleDots', toggle, ind)
-		this.dotsContainer.childNodes[ind].classList.remove(this.finalSettings.showDotsClass)
-		if (toggle) {
-			ind++
-			if (ind > this.items.length - 1)
-				ind = 0
-		} else {
-			ind--
-			if (ind < 0)
-				ind = this.items.length - 1
-		}
-		this.dotsContainer.childNodes[ind].classList.add(this.finalSettings.showDotsClass)
-	}
-
-	slideWithLoop(toggle) {
-		console.log('testSlide slideWithLoop', toggle)
-		if (toggle) {
-			this.oneSlideToggleItems(true, this.i)
-
-			if (this.finalSettings.dots)
-				this.oneSlideToggleDots(true, this.i)
-
-			if ((this.i + 1) < this.items.length)
-				this.i++
-			else
-				this.i = 0
-		} else {
-			this.oneSlideToggleItems(false, this.i)
-
-			if (this.finalSettings.dots)
-				this.oneSlideToggleDots(false, this.i)
-
-			if ((this.i - 1) > -1)
-				this.i--
-			else
-				this.i = this.items.length - 1
+			for (let i = 0; i < this.ArrActiveDots.length; i++) {
+				console.log("dotsBehavior for", this.activeItemIndex, this.ArrActiveDots)
+				if (this.activeItemIndex === this.ArrActiveDots[i]) {
+					let currentActiveDot = this.dotsContainer.querySelector("." + this.finalSettings.showDotsClass)
+					let activeIndex = this.ArrActiveDots.indexOf(this.ArrActiveDots[i])
+					currentActiveDot.classList.remove(this.finalSettings.showDotsClass)
+					this.dotsContainer.childNodes[activeIndex].classList.add(this.finalSettings.showDotsClass)
+					return false
+				}
+			}
 		}
 	}
 
-	slideWithoutLoop(toggle) {
-		console.log('testSlide slideWithoutLoop', toggle)
-		if (toggle) {
-			if ((this.i + 1) < this.items.length) {
-				this.oneSlideToggleItems(true, this.i)
-				if (this.finalSettings.dots)
-					this.oneSlideToggleDots(true, this.i)
-				this.i++
+	removeDots() {
+		if (this.isNode(this.dotsContainer)) {
+			while (this.dotsContainer.firstChild) {
+				this.dotsContainer.firstChild.remove();
+			}
+		}
+	}
+
+	createDots() {
+		this.removeDots()
+
+		let dotsCount
+		if (typeof (this.itemsCount) !== "number")
+			return false
+		else
+			dotsCount = Math.ceil(this.items.length / this.itemsCount)
+
+		for (let i = 0; i < dotsCount; i++)
+			this.dotsContainer.append(this.exampleOfDot.cloneNode(true))
+
+		//todo get active dot from arrActiveDots
+		this.dotsContainer.firstChild.classList.add(this.finalSettings.showDotsClass)
+	}
+
+	//for getBreakPoint()
+	getResponsiveMap() {
+		return Object.keys(this.finalSettings.itemsAtScreen)
+	}
+
+	//for getting the actual width
+	getBreakPoint() {
+		for (let i = 0; i < this.responsiveMap.length; i++) {
+			if (Number(this.responsiveMap[i]) > window.innerWidth) {
+				return this.responsiveMap[i]
+			}
+		}
+	}
+
+	createSlider() {
+		if (this.isResponsive()) {
+			let breakPoint = this.getBreakPoint()
+			this.setItemsCount(true, breakPoint)
+			this.setIsDots(breakPoint)
+			this.setArrActiveDots()
+			this.setIsNav(breakPoint)
+		}
+		else {
+			this.setItemsCount(false)
+			this.setArrActiveDots()
+			this.setIsDots()
+			this.setIsNav()
+		}
+
+		if (this.isDots)
+			this.createDots()
+		else
+			this.removeDots()
+
+		this.createItems()
+	}
+
+	slideWithLoop(directionToggle) {
+		//direction: next. 
+		if (directionToggle) {
+			this.itemsBehavior(directionToggle, 0, this.itemsCount)
+
+			//dots behavior-------------------------------------------------
+			if ((this.activeItemIndex + 1) < this.items.length) {
+				this.activeItemIndex++
+				if (this.isDots)
+					this.dotsBehavior()
+			}
+			else {
+				this.activeItemIndex = 0
+				if (this.isDots)
+					this.dotsBehavior()
+			}
+		}
+		//direction: prev
+		else {
+			this.itemsBehavior(directionToggle, this.itemsCount - 1, this.items.length - 1)
+
+			//dots behavior-------------------------------------------------
+			if ((this.activeItemIndex - 1) > -1) {
+				this.activeItemIndex--
+				if (this.isDots)
+					this.dotsBehavior()
+			}
+			else {
+				this.activeItemIndex = this.items.length - 1
+				if (this.isDots)
+					this.dotsBehavior()
+			}
+		}
+	}
+
+	slideWithoutLoop(directionToggle) {
+		if (directionToggle) {
+			if ((this.activeItemIndex + this.itemsCount) <= this.items.length - 1) {
+				this.itemsBehavior(directionToggle, 0, this.itemsCount)
+				this.activeItemIndex++
+				if (this.isDots)
+					this.dotsBehavior()
 			}
 			else
 				return false
 		}
-		else if ((this.i - 1) >= 0) {
-			this.oneSlideToggleItems(false, this.i)
-			if (this.finalSettings.dots)
-				this.oneSlideToggleDots(false, this.i)
-			this.i--
+		else if ((this.activeItemIndex - 1) >= 0) {
+			this.itemsBehavior(directionToggle, this.itemsCount - 1, this.items.length - 1)
+			this.activeItemIndex--
+			if (this.isDots)
+				this.dotsBehavior()
 		}
 		else
 			return false
 	}
 
 	run() {
-		this.btnNext.addEventListener('click', () => {
-			if (this.finalSettings.loop)
-				this.slideWithLoop(true)
-			else
-				this.slideWithoutLoop(true)
+		if (this.finalSettings.responsive) {
+			window.addEventListener('resize', () => {
+				this.createSlider()
+			})
+		}
 
-		})
-		this.btnPrev.addEventListener('click', () => {
-			if (this.finalSettings.loop)
-				this.slideWithLoop(false)
-			else
-				this.slideWithoutLoop(false)
-		})
+		if (this.isNav) {
+			this.btnNext.addEventListener('click', () => {
+				if (this.finalSettings.loop)
+					this.slideWithLoop(true)
+				else
+					this.slideWithoutLoop(true)
+			})
+
+			this.btnPrev.addEventListener('click', () => {
+				if (this.finalSettings.loop)
+					this.slideWithLoop(false)
+				else
+					this.slideWithoutLoop(false)
+			})
+		}
 	}
 }
