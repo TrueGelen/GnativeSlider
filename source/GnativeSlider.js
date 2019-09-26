@@ -1,13 +1,14 @@
 class GnativeSlider {
 	constructor(settings) {
 		this.defaultSettings = {
-			displayToShow: 'block',
+			displayToShow: 'inline-block', //inline-block or flex
 			loop: true,
 			itemsContainer: undefined,
+			margin: '0',
 			nav: true,
 			btnNext: undefined,
 			btnPrev: undefined,
-			showClass: undefined,
+			//showClass: undefined,
 			dots: true,
 			dotsContainer: 'undefined',
 			exampleOfDot: undefined,
@@ -22,6 +23,7 @@ class GnativeSlider {
 
 		this.itemsContainer = document.querySelector(this.finalSettings.itemsContainer)
 		this.items = document.querySelector(this.finalSettings.itemsContainer).children
+		this.widthItem = '0'
 		this.itemsCount = this.finalSettings.itemsCount
 		this.activeItemIndex = 0
 
@@ -34,15 +36,36 @@ class GnativeSlider {
 		this.exampleOfDot = document.querySelector(this.finalSettings.exampleOfDot)
 		this.isDots = this.finalSettings.dots
 
+		this.dynamicAnimationStyles = undefined
+
 		this.createSlider()
 		this.run()
+
+		console.log(this.items)
+	}
+
+	preparingItemsContainer() {
+		for (let i = 0; i < this.itemsContainer.childNodes.length; i++) {
+			if (this.itemsContainer.childNodes[i].nodeName === "#text")
+				this.itemsContainer.childNodes[i].remove()
+		}
+		this.itemsContainer.style.margin = `0px -${this.finalSettings.margin} 0px -${this.finalSettings.margin}`
+		this.itemsContainer.style.overflow = 'hidden'
+	}
+
+	preparingItems() {
+		let itemsWidth = 100 / this.itemsCount
+		for (let i = 0; i < this.items.length; i++) {
+			this.items[i].style.width = `calc(${itemsWidth}% - ${this.finalSettings.margin} - ${this.finalSettings.margin})`
+			this.items[i].style.margin = `0px ${this.finalSettings.margin}`
+		}
 	}
 
 	debug() {
 		console.log('debug this.items:===================\n', this.items)
 		console.log('debug this.btnNext:===================\n', this.btnNext)
 		console.log('debug this.btnPrev:===================\n', this.btnPrev)
-		console.log('debug this.finalSettings.showClass:===================\n', this.finalSettings.showClass)
+		//console.log('debug this.finalSettings.showClass:===================\n', this.finalSettings.showClass)
 		console.log('debug this.dotsContainer:===================\n', this.dotsContainer)
 		console.log('debug this.exampleOfDot:===================\n', this.exampleOfDot)
 		console.log('debug this.finalSettings.showDotsClass:===================\n', this.finalSettings.showDotsClass)
@@ -92,33 +115,122 @@ class GnativeSlider {
 		}
 	}
 
-	//on button, swipe but not dots
-	itemsBehavior(directionToggle, removeItemInd, addItemInd) {
-		this.items[removeItemInd].classList.remove(this.finalSettings.showClass)
-		this.items[addItemInd].classList.add(this.finalSettings.showClass)
+	addAnimation(keyframes) {
+		if (this.dynamicAnimationStyles === undefined) {
 
-		if (directionToggle)
-			this.itemsContainer.append(this.items[removeItemInd])
-		else
-			this.itemsContainer.prepend(this.items[addItemInd])
+			this.dynamicAnimationStyles = document.createElement('style');
+			this.dynamicAnimationStyles.type = 'text/css';
+			console.log("addAnimation", this.dynamicAnimationStyles)
+			document.head.appendChild(this.dynamicAnimationStyles);
+		}
+		this.dynamicAnimationStyles.sheet.insertRule(keyframes, this.dynamicAnimationStyles.length);
+	}
+
+	//on button, swipe but not dots
+	itemsBehavior(directionToggle) {
+		let step = 0
+		let startAnimate
+		let callbackForForwardAnim = () => {
+			this.items[this.itemsCount].style.animationName = 'none'
+			this.items[this.itemsCount].style.margin = `0px ${this.finalSettings.margin}`
+			this.items[0].style.animationName = 'none'
+			this.items[0].style.display = 'none'
+			this.items[0].style.margin = `0px ${this.finalSettings.margin}`
+			this.itemsContainer.append(this.items[0])
+			step = 0
+			this.btnNext.addEventListener('click', this.btnNextClick)
+		}
+
+		let callbackForBackwardAnim = () => {
+			this.items[0].style.animationName = 'none'
+			this.items[0].style.margin = `0px ${this.finalSettings.margin}`
+			this.items[this.itemsCount].style.animationName = 'none'
+			this.items[this.itemsCount].style.display = 'none'
+			this.items[this.itemsCount].style.margin = `0px ${this.finalSettings.margin}`
+			this.itemsContainer.style.textAlign = 'left'
+			step = 0
+			this.btnPrev.addEventListener('click', this.btnPrevClick)
+		}
+
+		let forwardAnim = () => {
+			step += 10
+			this.items[0].style.marginLeft = "-" + step + "px"
+
+			if (parseInt(this.items[0].style.marginLeft) * -1 > Number(this.widthItem)) {
+				clearInterval(startAnimate)
+				callbackForForwardAnim()
+			}
+		}
+
+		let backwardAnim = () => {
+			step += 10
+			this.items[this.itemsCount].style.marginRight = "-" + step + "px"
+			if (parseInt(this.items[this.itemsCount].style.marginRight) * -1 > Number(this.widthItem)) {
+				clearInterval(startAnimate)
+				console.log("anim", this.items[this.items.length - 1])
+				callbackForBackwardAnim()
+			}
+		}
+
+		if (directionToggle) {
+			this.btnNext.removeEventListener('click', this.btnNextClick)
+			this.items[this.itemsCount].style.display = this.finalSettings.displayToShow
+			this.items[this.itemsCount].style.marginRight = `-${Number(this.widthItem)}px`
+			startAnimate = setInterval(forwardAnim, 5)
+		}
+		else {
+			this.btnPrev.removeEventListener('click', this.btnPrevClick)
+			this.items[this.items.length - 1].style.marginLeft = `-${Number(this.widthItem)}px`
+			this.items[this.items.length - 1].style.display = this.finalSettings.displayToShow
+			console.log("before", this.items[this.items.length - 1])
+			this.itemsContainer.prepend(this.items[this.items.length - 1])
+			console.log("after", this.items[this.items.length - 1])
+			this.itemsContainer.style.textAlign = 'right'
+			startAnimate = setInterval(backwardAnim, 5)
+		}
+	}
+
+	setWidthItem() {
+		this.widthItem = (this.items[0].getBoundingClientRect().width + parseInt(this.items[0].style.marginLeft)).toString()
 	}
 
 	createItems() {
 		for (let i = 0; i < this.items.length; i++) {
-			this.items[i].classList.remove(this.finalSettings.showClass)
+			this.items[i].style.display = 'none'
 		}
 		/* this.items.forEach(item => {
 			item.classList.remove(this.finalSettings.showClass)
 		}) */
 
 		for (let i = 0; i < this.itemsCount; i++) {
-			this.items[i].classList.add(this.finalSettings.showClass)
+			this.items[i].style.display = this.finalSettings.displayToShow
 		}
 	}
 
+	/*//this.itemsContainer.append(this.items[removeItemInd])
+		 this.addAnimation(`
+			@keyframes forAddedItems {
+				0% {
+					margin-right: -${this.WidthItem}px;
+				}
+				100% {
+					margin-right: 0px;
+				}
+			}`)
+		this.addAnimation(`
+			@keyframes forRemovedItems {
+				100% {
+					margin-left: -${this.WidthItem}px;					
+				}
+			}`)
+		//margin-left: -${this.WidthItem}px;
+		this.items[addItemInd].style.animation = 'forAddedItems 2s linear'
+		this.items[removeItemInd].style.animation = 'forRemovedItems 2s linear'
+		this.items[removeItemInd].addEventListener('animationend', callbackForAnimation) */
+
 	//todo may to do the function of check for a correct data
 	/*isDots(widthOfScreen = undefined) {
-
+		
 		 if (this.finalSettings.dots) {
 			if (this.dotsContainer === null) {
 				throw new Error("dotsContainer is null. If you want to have container of" +
@@ -170,7 +282,7 @@ class GnativeSlider {
 		}
 		else {
 			for (let i = 0; i < this.ArrActiveDots.length; i++) {
-				console.log("dotsBehavior for", this.activeItemIndex, this.ArrActiveDots)
+				//console.log("dotsBehavior for", this.activeItemIndex, this.ArrActiveDots)
 				if (this.activeItemIndex === this.ArrActiveDots[i]) {
 					let currentActiveDot = this.dotsContainer.querySelector("." + this.finalSettings.showDotsClass)
 					let activeIndex = this.ArrActiveDots.indexOf(this.ArrActiveDots[i])
@@ -221,6 +333,8 @@ class GnativeSlider {
 	}
 
 	createSlider() {
+		this.preparingItemsContainer()
+
 		if (this.isResponsive()) {
 			let breakPoint = this.getBreakPoint()
 			this.setItemsCount(true, breakPoint)
@@ -240,13 +354,16 @@ class GnativeSlider {
 		else
 			this.removeDots()
 
+		this.preparingItems()
 		this.createItems()
+		this.setWidthItem()
 	}
 
 	slideWithLoop(directionToggle) {
 		//direction: next. 
 		if (directionToggle) {
-			this.itemsBehavior(directionToggle, 0, this.itemsCount)
+			this.itemsBehavior(directionToggle)
+			//window.setTimeout(() => { console.log("setTimeout"); this.itemsBehavior(directionToggle) }, 2000)
 
 			//dots behavior-------------------------------------------------
 			if ((this.activeItemIndex + 1) < this.items.length) {
@@ -262,7 +379,7 @@ class GnativeSlider {
 		}
 		//direction: prev
 		else {
-			this.itemsBehavior(directionToggle, this.itemsCount - 1, this.items.length - 1)
+			this.itemsBehavior(directionToggle)
 
 			//dots behavior-------------------------------------------------
 			if ((this.activeItemIndex - 1) > -1) {
@@ -299,6 +416,21 @@ class GnativeSlider {
 			return false
 	}
 
+
+	btnNextClick = () => {
+		if (this.finalSettings.loop)
+			this.slideWithLoop(true)
+		else
+			this.slideWithoutLoop(true)
+	}
+
+	btnPrevClick = () => {
+		if (this.finalSettings.loop)
+			this.slideWithLoop(false)
+		else
+			this.slideWithoutLoop(false)
+	}
+
 	run() {
 		if (this.finalSettings.responsive) {
 			window.addEventListener('resize', () => {
@@ -307,19 +439,8 @@ class GnativeSlider {
 		}
 
 		if (this.isNav) {
-			this.btnNext.addEventListener('click', () => {
-				if (this.finalSettings.loop)
-					this.slideWithLoop(true)
-				else
-					this.slideWithoutLoop(true)
-			})
-
-			this.btnPrev.addEventListener('click', () => {
-				if (this.finalSettings.loop)
-					this.slideWithLoop(false)
-				else
-					this.slideWithoutLoop(false)
-			})
+			this.btnNext.addEventListener('click', this.btnNextClick)
+			this.btnPrev.addEventListener('click', this.btnPrevClick)
 		}
 	}
 }
