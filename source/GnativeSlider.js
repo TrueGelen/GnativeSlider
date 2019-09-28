@@ -36,8 +36,6 @@ class GnativeSlider {
 		this.exampleOfDot = document.querySelector(this.finalSettings.exampleOfDot)
 		this.isDots = this.finalSettings.dots
 
-		console.log(this.displayOfButtons)
-
 		//for function addAnimation(keyframes)
 		//this.dynamicAnimationStyles = undefined
 
@@ -411,11 +409,10 @@ class GnativeSlider {
 		this.setWidthItem()
 	}
 
-	slideWithLoop(directionToggle) {
+	async slideWithLoop(directionToggle) {
 		//direction: next. 
 		if (directionToggle) {
-			this.itemsBehavior(directionToggle)
-			//window.setTimeout(() => { console.log("setTimeout"); this.itemsBehavior(directionToggle) }, 2000)
+			await this.itemsBehavior(directionToggle)
 
 			//dots behavior-------------------------------------------------
 			if ((this.activeItemIndex + 1) < this.items.length) {
@@ -431,7 +428,7 @@ class GnativeSlider {
 		}
 		//direction: prev
 		else {
-			this.itemsBehavior(directionToggle)
+			await this.itemsBehavior(directionToggle)
 
 			//dots behavior-------------------------------------------------
 			if ((this.activeItemIndex - 1) > -1) {
@@ -469,18 +466,38 @@ class GnativeSlider {
 			return false
 	}
 
-	btnNextClick = () => {
+	btnNextClick = async () => {
 		if (this.finalSettings.loop)
-			this.slideWithLoop(true)
+			await this.slideWithLoop(true)
 		else
-			this.slideWithoutLoop(true)
+			await this.slideWithoutLoop(true)
 	}
 
-	btnPrevClick = () => {
+	btnPrevClick = async () => {
 		if (this.finalSettings.loop)
-			this.slideWithLoop(false)
+			await this.slideWithLoop(false)
 		else
-			this.slideWithoutLoop(false)
+			await this.slideWithoutLoop(false)
+	}
+
+	getFirstTouch = (e) => {
+		this.itemsContainer.addEventListener('touchend', this.getTouchEnd)
+		this.firstTouchX = e.touches[0].clientX
+		this.firstTouchY = e.touches[0].clientY
+		this.itemsContainer.removeEventListener('touchstart', this.getFirstTouch)
+	}
+
+	getTouchEnd = async (e) => {
+		this.itemsContainer.removeEventListener('touchend', this.getTouchEnd)
+		let direction = (Math.abs(this.firstTouchX - e.changedTouches[0].clientX) > Math.abs(this.firstTouchY - e.changedTouches[0].clientY))
+
+		if (direction)
+			if (this.firstTouchX > e.changedTouches[0].clientX)
+				await this.btnNextClick()
+			else
+				await this.btnPrevClick()
+
+		this.itemsContainer.addEventListener('touchstart', this.getFirstTouch)
 	}
 
 	run() {
@@ -489,6 +506,9 @@ class GnativeSlider {
 				this.createSlider()
 			})
 		}
+
+		this.itemsContainer.addEventListener('touchstart', this.getFirstTouch)
+		this.itemsContainer.addEventListener('touchend', this.getTouchEnd)
 
 		if (this.isNav) {
 			this.btnNext.addEventListener('click', this.btnNextClick)
