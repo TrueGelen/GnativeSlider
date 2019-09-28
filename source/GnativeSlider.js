@@ -8,9 +8,8 @@ class GnativeSlider {
 			nav: true,
 			btnNext: undefined,
 			btnPrev: undefined,
-			//showClass: undefined,
 			dots: true,
-			dotsContainer: 'undefined',
+			dotsContainer: undefined,
 			exampleOfDot: undefined,
 			showDotsClass: undefined,
 			itemsCount: 1,
@@ -30,17 +29,28 @@ class GnativeSlider {
 		this.isNav = this.finalSettings.nav
 		this.btnNext = document.querySelector(this.finalSettings.btnNext)
 		this.btnPrev = document.querySelector(this.finalSettings.btnPrev)
+		this.displayOfButtons = this.getDisplayOfElement(this.btnNext)
 
 		this.arrActiveDots = [0]
 		this.dotsContainer = document.querySelector(this.finalSettings.dotsContainer)
 		this.exampleOfDot = document.querySelector(this.finalSettings.exampleOfDot)
 		this.isDots = this.finalSettings.dots
 
+		console.log(this.displayOfButtons)
+
 		//for function addAnimation(keyframes)
 		//this.dynamicAnimationStyles = undefined
 
 		this.createSlider()
 		this.run()
+	}
+
+	getDisplayOfElement(element) {
+		if (element.style.display === '') {
+			return element.currentStyle ? element.currentStyle.display : getComputedStyle(element, null).display
+		}
+		else
+			return element.style.display
 	}
 
 	preparingItemsContainer() {
@@ -98,6 +108,19 @@ class GnativeSlider {
 		} else {
 			this.isNav = this.finalSettings.nav
 		}
+
+		if (this.isNode(this.btnNext) && this.isNode(this.btnPrev)) {
+			if (!this.isNav) {
+				this.btnNext.style.display = 'none'
+				this.btnPrev.style.display = 'none'
+			}
+			else {
+				this.btnNext.style.display = this.displayOfButtons
+				this.btnPrev.style.display = this.displayOfButtons
+			}
+		}
+		else
+			return false
 	}
 
 	//for getting this.itemsCount
@@ -463,7 +486,6 @@ class GnativeSlider {
 	run() {
 		if (this.finalSettings.responsive) {
 			window.addEventListener('resize', () => {
-				//this.cleanEventListenerForDots()
 				this.createSlider()
 			})
 		}
@@ -472,11 +494,5 @@ class GnativeSlider {
 			this.btnNext.addEventListener('click', this.btnNextClick)
 			this.btnPrev.addEventListener('click', this.btnPrevClick)
 		}
-
-		/* if (this.isDots)
-			this.setEventListenerForDots() */
 	}
 }
-//todo
-//dotsContainer.display = none on resize
-//swipe
