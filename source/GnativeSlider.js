@@ -1,9 +1,10 @@
 class GnativeSlider {
 	constructor(settings) {
 		this.defaultSettings = {
-			displayToShow: 'inline-block', //inline-block or flex
+			displayToShow: 'inline-block',
 			loop: true,
 			itemsContainer: undefined,
+			animationTime: 200,
 			margin: '0',
 			nav: true,
 			btnNext: undefined,
@@ -11,17 +12,20 @@ class GnativeSlider {
 			dots: true,
 			dotsContainer: undefined,
 			exampleOfDot: undefined,
-			showDotsClass: undefined,
+			activeDotClass: undefined,
 			itemsCount: 1,
 			responsive: false,
 			itemsAtScreen: {}
 		}
 
 		this.finalSettings = this.mergeSettings(this.defaultSettings, settings)
+
+		//for the function getBreakPoint()
 		this.responsiveMap = this.getResponsiveMap()
 
 		this.itemsContainer = document.querySelector(this.finalSettings.itemsContainer)
 		this.items = document.querySelector(this.finalSettings.itemsContainer).children
+		//to get the step of animation and to work the animation in the itemsBehavior()
 		this.widthItem = '0'
 		this.itemsCount = this.finalSettings.itemsCount
 		this.activeItemIndex = 0
@@ -29,18 +33,35 @@ class GnativeSlider {
 		this.isNav = this.finalSettings.nav
 		this.btnNext = document.querySelector(this.finalSettings.btnNext)
 		this.btnPrev = document.querySelector(this.finalSettings.btnPrev)
+		//to show buttons
 		this.displayOfButtons = this.getDisplayOfElement(this.btnNext)
 
+		//the map of references for active dots and items of slide
 		this.arrActiveDots = [0]
 		this.dotsContainer = document.querySelector(this.finalSettings.dotsContainer)
+		//the made example of a dot for the slider
 		this.exampleOfDot = document.querySelector(this.finalSettings.exampleOfDot)
 		this.isDots = this.finalSettings.dots
 
-		//for function addAnimation(keyframes)
-		//this.dynamicAnimationStyles = undefined
+		//for swipe functions: getFirstTouch(), getTouchEnd(); and listeners in setListeners()
+		this.firstTouchX = 0
+		this.firstTouchY = 0
+
+		//for the stack of calls
+		this.stackNext = 0
+		this.stackPrev = 0
+
+		//for the setStepOfAnimation()
+		this.stepOfAnimation
 
 		this.createSlider()
-		this.run()
+		this.setEventListeners()
+
+		return this
+	}
+
+	validationOfTheInputObject() {
+
 	}
 
 	getDisplayOfElement(element) {
@@ -60,24 +81,13 @@ class GnativeSlider {
 		this.itemsContainer.style.overflow = 'hidden'
 	}
 
+	//setting width of item without margin
 	preparingItems() {
 		let itemsWidth = 100 / this.itemsCount
 		for (let i = 0; i < this.items.length; i++) {
 			this.items[i].style.width = `calc(${itemsWidth}% - ${this.finalSettings.margin} - ${this.finalSettings.margin})`
 			this.items[i].style.margin = `0px ${this.finalSettings.margin}`
 		}
-	}
-
-	debug() {
-		console.log('debug this.items:===================\n', this.items)
-		console.log('debug this.btnNext:===================\n', this.btnNext)
-		console.log('debug this.btnPrev:===================\n', this.btnPrev)
-		//console.log('debug this.finalSettings.showClass:===================\n', this.finalSettings.showClass)
-		console.log('debug this.dotsContainer:===================\n', this.dotsContainer)
-		console.log('debug this.exampleOfDot:===================\n', this.exampleOfDot)
-		console.log('debug this.finalSettings.showDotsClass:===================\n', this.finalSettings.showDotsClass)
-		console.log('debug this.finalSettings:===================\n', this.finalSettings)
-		console.log('debug this.responsiveMap:===================\n', this.responsiveMap)
 	}
 
 	isNode(node) {
@@ -132,23 +142,16 @@ class GnativeSlider {
 		}
 	}
 
-	//an experiment with animation slide by adding styles in the head
-	/* addAnimation(keyframes) {
-		if (this.dynamicAnimationStyles === undefined) {
-
-			this.dynamicAnimationStyles = document.createElement('style');
-			this.dynamicAnimationStyles.type = 'text/css';
-			console.log("addAnimation", this.dynamicAnimationStyles)
-			document.head.appendChild(this.dynamicAnimationStyles);
-		}
-		this.dynamicAnimationStyles.sheet.insertRule(keyframes, this.dynamicAnimationStyles.length);
-	} */
+	setStepOfAnimation() {
+		this.stepOfAnimation = this.widthItem / (this.finalSettings.animationTime / 5)
+	}
 
 	//on button, swipe but not dots
 	itemsBehavior(directionToggle) {
 		return new Promise((resolve) => {
 			let step = 0
 			let startAnimate
+
 			let callbackForForwardAnim = () => {
 				this.items[this.itemsCount].style.animationName = 'none'
 				this.items[this.itemsCount].style.margin = `0px ${this.finalSettings.margin}`
@@ -157,7 +160,6 @@ class GnativeSlider {
 				this.items[0].style.margin = `0px ${this.finalSettings.margin}`
 				this.itemsContainer.append(this.items[0])
 				step = 0
-				this.btnNext.addEventListener('click', this.btnNextClick)
 			}
 
 			let callbackForBackwardAnim = () => {
@@ -168,10 +170,10 @@ class GnativeSlider {
 				this.items[this.itemsCount].style.margin = `0px ${this.finalSettings.margin}`
 				this.itemsContainer.style.textAlign = 'left'
 				step = 0
-				this.btnPrev.addEventListener('click', this.btnPrevClick)
 			}
+
 			let forwardAnim = () => {
-				step += 10
+				step += this.stepOfAnimation
 				this.items[0].style.marginLeft = "-" + step + "px"
 				if (parseInt(this.items[0].style.marginLeft) * -1 > Number(this.widthItem)) {
 					clearInterval(startAnimate)
@@ -181,7 +183,7 @@ class GnativeSlider {
 			}
 
 			let backwardAnim = () => {
-				step += 10
+				step += this.stepOfAnimation
 				this.items[this.itemsCount].style.marginRight = "-" + step + "px"
 				if (parseInt(this.items[this.itemsCount].style.marginRight) * -1 > Number(this.widthItem)) {
 					clearInterval(startAnimate)
@@ -191,13 +193,11 @@ class GnativeSlider {
 			}
 
 			if (directionToggle) {
-				this.btnNext.removeEventListener('click', this.btnNextClick)
 				this.items[this.itemsCount].style.display = this.finalSettings.displayToShow
 				this.items[this.itemsCount].style.marginRight = `-${Number(this.widthItem)}px`
 				startAnimate = setInterval(forwardAnim, 5)
 			}
 			else {
-				this.btnPrev.removeEventListener('click', this.btnPrevClick)
 				this.items[this.items.length - 1].style.marginLeft = `-${Number(this.widthItem)}px`
 				this.items[this.items.length - 1].style.display = this.finalSettings.displayToShow
 				this.itemsContainer.prepend(this.items[this.items.length - 1])
@@ -208,6 +208,7 @@ class GnativeSlider {
 
 	}
 
+	//setting this.widthItem for this.itemsBehavior(directionToggle)
 	setWidthItem() {
 		this.widthItem = (this.items[0].getBoundingClientRect().width + parseInt(this.items[0].style.marginLeft)).toString()
 	}
@@ -221,49 +222,6 @@ class GnativeSlider {
 			this.items[i].style.display = this.finalSettings.displayToShow
 		}
 	}
-
-	/*//this.itemsContainer.append(this.items[removeItemInd])
-		 this.addAnimation(`
-			@keyframes forAddedItems {
-				0% {
-					margin-right: -${this.WidthItem}px;
-				}
-				100% {
-					margin-right: 0px;
-				}
-			}`)
-		this.addAnimation(`
-			@keyframes forRemovedItems {
-				100% {
-					margin-left: -${this.WidthItem}px;					
-				}
-			}`)
-		//margin-left: -${this.WidthItem}px;
-		this.items[addItemInd].style.animation = 'forAddedItems 2s linear'
-		this.items[removeItemInd].style.animation = 'forRemovedItems 2s linear'
-		this.items[removeItemInd].addEventListener('animationend', callbackForAnimation) */
-
-	//todo may to do the function of check for a correct options
-	/*isDots(widthOfScreen = undefined) {
-		
-		 if (this.finalSettings.dots) {
-			if (this.dotsContainer === null) {
-				throw new Error("dotsContainer is null. If you want to have container of" +
-					" dots you must pass the option {dotsContainer: 'path in DOM'}")
-			}
-			if (this.exampleOfDot === null) {
-				throw new Error("exampleOfDot is null. If you want to have dots in" +
-					" this slider you must pass the option {exampleOfDot: 'path in DOM'}." +
-					" Also you must made one dot as an example in .html and give to it styles in .css")
-			}
-			if (this.finalSettings.showDotsClass === null) {
-				throw new Error("showDotsClass is null. If you want to have active dots in" +
-					" this slider you must pass the option {showDotsClass: 'yourClass'}")
-			}
-			return true
-		}
-		return false 
-	}*/
 
 	setIsDots(widthOfScreen = undefined) {
 		if (widthOfScreen !== undefined) {
@@ -286,23 +244,20 @@ class GnativeSlider {
 		if (this.arrActiveDots[this.arrActiveDots.length - 1] !== this.items.length - this.itemsCount) {
 			this.arrActiveDots[this.arrActiveDots.length - 1] = this.items.length - this.itemsCount
 		}
-		//console.log("setArrActiveDots", this.arrActiveDots)
 	}
 
 	dotsBehavior() {
-		//&& !this.dotsContainer.childNodes[i].classList.contains(this.finalSettings.showDotsClass)
 		if (this.arrActiveDots.length === 1) {
-			this.dotsContainer.childNodes[this.activeItemIndex].classList.remove(this.finalSettings.showDotsClass)
-			this.dotsContainer.childNodes[this.activeItemIndex + 1].classList.add(this.finalSettings.showDotsClass)
+			this.dotsContainer.childNodes[this.activeItemIndex].classList.remove(this.finalSettings.activeDotClass)
+			this.dotsContainer.childNodes[this.activeItemIndex + 1].classList.add(this.finalSettings.activeDotClass)
 		}
 		else {
 			for (let i = 0; i < this.arrActiveDots.length; i++) {
-				//console.log("dotsBehavior for", this.activeItemIndex, this.arrActiveDots)
 				if (this.activeItemIndex === this.arrActiveDots[i]) {
-					let currentActiveDot = this.dotsContainer.querySelector("." + this.finalSettings.showDotsClass)
+					let currentActiveDot = this.dotsContainer.querySelector("." + this.finalSettings.activeDotClass)
 					let activeIndex = this.arrActiveDots.indexOf(this.arrActiveDots[i])
-					currentActiveDot.classList.remove(this.finalSettings.showDotsClass)
-					this.dotsContainer.childNodes[activeIndex].classList.add(this.finalSettings.showDotsClass)
+					currentActiveDot.classList.remove(this.finalSettings.activeDotClass)
+					this.dotsContainer.childNodes[activeIndex].classList.add(this.finalSettings.activeDotClass)
 					return false
 				}
 			}
@@ -331,32 +286,50 @@ class GnativeSlider {
 
 		for (let i = 0; i < this.arrActiveDots.length; i++) {
 			if (this.activeItemIndex < this.arrActiveDots[i]) {
-				this.dotsContainer.children[i - 1].classList.add(this.finalSettings.showDotsClass)
+				this.dotsContainer.children[i - 1].classList.add(this.finalSettings.activeDotClass)
 				return false
 			} else if (this.activeItemIndex == this.arrActiveDots[i]) {
-				this.dotsContainer.children[i].classList.add(this.finalSettings.showDotsClass)
+				this.dotsContainer.children[i].classList.add(this.finalSettings.activeDotClass)
 				return false
 			}
 			else if (this.activeIndex == 0 || this.activeIndex > this.arrActiveDots.length - 1) {
-				this.dotsContainer.firstChild.classList.add(this.finalSettings.showDotsClass)
+				this.dotsContainer.firstChild.classList.add(this.finalSettings.activeDotClass)
 				return false
 			}
 		}
 	}
 
-	dotClick = async (ind, e) => {
-		//this.dotsContainer.querySelector("." + this.finalSettings.showDotsClass).classList.remove(this.finalSettings.showDotsClass)
-		//e.target.classList.add(this.finalSettings.showDotsClass)
+	dotClick = async (ind) => {
 
 		let countStepTo = this.activeItemIndex - this.arrActiveDots[ind]
 
 		if (countStepTo < 0) {
-			for (let i = 0; i < countStepTo * -1; i++)
-				await this.slideWithoutLoop(true)
+
+			if (this.stackNext === 0 && this.stackPrev === 0) {
+				this.stackNext = (countStepTo) * -1
+				this.stackWatcher()
+			}
+			else if (this.stackNext !== 0)
+				this.stackNext = (countStepTo) * -1
+			else if (this.stackPrev !== 0)
+				this.stackNext = (countStepTo - 1) * -1
+
+			if (this.stackPrev !== 0)
+				this.stackPrev = 1
 		}
 		else {
-			for (let i = 0; i < countStepTo; i++)
-				await this.slideWithoutLoop(false)
+
+			if (this.stackPrev === 0 && this.stackNext === 0) {
+				this.stackPrev = countStepTo
+				this.stackWatcher()
+			}
+			else if (this.stackPrev !== 0)
+				this.stackPrev = countStepTo
+			else if (this.stackNext !== 0)
+				this.stackPrev = countStepTo + 1
+
+			if (this.stackNext !== 0)
+				this.stackNext = 1
 		}
 	}
 
@@ -407,6 +380,7 @@ class GnativeSlider {
 		this.preparingItems()
 		this.createItems()
 		this.setWidthItem()
+		this.setStepOfAnimation()
 	}
 
 	async slideWithLoop(directionToggle) {
@@ -500,7 +474,19 @@ class GnativeSlider {
 		this.itemsContainer.addEventListener('touchstart', this.getFirstTouch)
 	}
 
-	run() {
+	async stackWatcher() {
+		if (this.stackNext > 0) {
+			await this.btnNextClick()
+			this.stackNext--
+			this.stackWatcher()
+		} else if (this.stackPrev > 0) {
+			await this.btnPrevClick()
+			this.stackPrev--
+			this.stackWatcher()
+		}
+	}
+
+	setEventListeners() {
 		if (this.finalSettings.responsive) {
 			window.addEventListener('resize', () => {
 				this.createSlider()
@@ -511,8 +497,24 @@ class GnativeSlider {
 		this.itemsContainer.addEventListener('touchend', this.getTouchEnd)
 
 		if (this.isNav) {
-			this.btnNext.addEventListener('click', this.btnNextClick)
-			this.btnPrev.addEventListener('click', this.btnPrevClick)
+			this.btnNext.addEventListener('click', () => {
+				this.stackNext++
+				if (this.stackNext === 1 && this.stackPrev === 0) {
+					this.stackWatcher()
+				}
+
+				if (this.stackPrev !== 0)
+					this.stackPrev = 1
+			})
+			this.btnPrev.addEventListener('click', () => {
+				this.stackPrev++
+				if (this.stackPrev === 1 && this.stackNext === 0) {
+					this.stackWatcher()
+				}
+
+				if (this.stackNext !== 0)
+					this.stackNext = 1
+			})
 		}
 	}
 }
