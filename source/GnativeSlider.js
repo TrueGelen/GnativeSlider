@@ -73,8 +73,11 @@ class GnativeSlider {
 	// 2.make wrappers for items and items container 
 	preparingItemsContainer() {
 		for (let i = 0; i < this.wrapperItemsContainer.childNodes.length; i++) {
-			if (this.wrapperItemsContainer.childNodes[i].nodeName === "#text")
+			if (this.wrapperItemsContainer.childNodes[i].nodeName === "#text" ||
+				this.wrapperItemsContainer.childNodes[i].nodeName === "#comment") {
 				this.wrapperItemsContainer.childNodes[i].remove()
+				i--
+			}
 		}
 
 		while (this.wrapperItemsContainer.firstChild) {
