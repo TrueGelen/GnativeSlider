@@ -1,11 +1,10 @@
 class GnativeSlider {
 	constructor(settings) {
 		this.defaultSettings = {
-			displayToShow: 'inline-block',
 			loop: true,
 			itemsContainer: undefined,
 			animationTime: 200,
-			margin: '0',
+			margin: '5px',
 			nav: true,
 			btnNext: undefined,
 			btnPrev: undefined,
@@ -15,7 +14,7 @@ class GnativeSlider {
 			activeDotClass: undefined,
 			itemsCount: 1,
 			responsive: false,
-			itemsAtScreen: {}
+			breakpoints: {}
 		}
 
 		this.finalSettings = this.mergeSettings(this.defaultSettings, settings)
@@ -23,8 +22,9 @@ class GnativeSlider {
 		//for the function getBreakPoint()
 		this.responsiveMap = this.getResponsiveMap()
 
-		this.itemsContainer = document.querySelector(this.finalSettings.itemsContainer)
-		this.items = document.querySelector(this.finalSettings.itemsContainer).children
+		this.wrapperItemsContainer = document.querySelector(this.finalSettings.itemsContainer)
+		this.itemsContainer = document.createElement('div')
+		this.items = this.itemsContainer.children
 		//to get the step of animation and to work the animation in the itemsBehavior()
 		this.widthItem = '0'
 		this.itemsCount = this.finalSettings.itemsCount
@@ -34,7 +34,7 @@ class GnativeSlider {
 		this.btnNext = document.querySelector(this.finalSettings.btnNext)
 		this.btnPrev = document.querySelector(this.finalSettings.btnPrev)
 		//to show buttons
-		this.displayOfButtons = this.getDisplayOfElement(this.btnNext)
+		this.displayOfButtons = this.getPropertyOfElement(this.btnNext, 'display')
 
 		//the map of references for active dots and items of slide
 		this.arrActiveDots = [0]
@@ -43,7 +43,7 @@ class GnativeSlider {
 		this.exampleOfDot = document.querySelector(this.finalSettings.exampleOfDot)
 		this.isDots = this.finalSettings.dots
 
-		//for swipe functions: getFirstTouch(), getTouchEnd(); and listeners in setListeners()
+		//for swipe functions: getFirstTouch(), getTouchEnd(); and listeners in setEventListeners()
 		this.firstTouchX = 0
 		this.firstTouchY = 0
 
@@ -54,31 +54,42 @@ class GnativeSlider {
 		//for the setStepOfAnimation()
 		this.stepOfAnimation
 
-		this.createSlider()
+		this.preparingItemsContainer()
 		this.setEventListeners()
+
 
 		return this
 	}
 
-	validationOfTheInputObject() {
-
-	}
-
-	getDisplayOfElement(element) {
-		if (element.style.display === '') {
-			return element.currentStyle ? element.currentStyle.display : getComputedStyle(element, null).display
+	getPropertyOfElement(element, property) {
+		if (element.style[property] === '') {
+			return element.currentStyle ? element.currentStyle[property] : getComputedStyle(element, null)[property]
 		}
 		else
-			return element.style.display
+			return element.style[property]
 	}
 
+	// 1.remove text child of items container
+	// 2.make wrappers for items and items container 
 	preparingItemsContainer() {
-		for (let i = 0; i < this.itemsContainer.childNodes.length; i++) {
-			if (this.itemsContainer.childNodes[i].nodeName === "#text")
-				this.itemsContainer.childNodes[i].remove()
+		for (let i = 0; i < this.wrapperItemsContainer.childNodes.length; i++) {
+			if (this.wrapperItemsContainer.childNodes[i].nodeName === "#text")
+				this.wrapperItemsContainer.childNodes[i].remove()
 		}
-		this.itemsContainer.style.margin = `0px -${this.finalSettings.margin} 0px -${this.finalSettings.margin}`
+
+		while (this.wrapperItemsContainer.firstChild) {
+			this.wrapperItemsContainer.firstChild.style.textAlign = this.getPropertyOfElement(this.wrapperItemsContainer.firstChild, 'textAlign')
+			this.wrapperItemsContainer.firstChild.style.width = '100%'
+			let wrapperItem = document.createElement('div')
+			wrapperItem.append(this.wrapperItemsContainer.firstChild)
+			this.itemsContainer.append(wrapperItem)
+		}
+
+		this.wrapperItemsContainer.append(this.itemsContainer)
+
 		this.itemsContainer.style.overflow = 'hidden'
+		this.itemsContainer.style.margin = `0px -${this.finalSettings.margin} 0px -${this.finalSettings.margin}`
+		this.itemsContainer.style.textAlign = 'left'
 	}
 
 	//setting width of item without margin
@@ -100,7 +111,7 @@ class GnativeSlider {
 
 	isResponsive() {
 		if (this.finalSettings.responsive) {
-			for (let key in this.finalSettings.itemsAtScreen) {
+			for (let key in this.finalSettings.breakpoints) {
 				if (key > window.innerWidth)
 					return true
 			}
@@ -111,8 +122,8 @@ class GnativeSlider {
 
 	setIsNav(widthOfScreen = undefined) {
 		if (widthOfScreen !== undefined) {
-			if (this.finalSettings.itemsAtScreen[widthOfScreen].nav !== undefined)
-				this.isNav = this.finalSettings.itemsAtScreen[widthOfScreen].nav
+			if (this.finalSettings.breakpoints[widthOfScreen].nav !== undefined)
+				this.isNav = this.finalSettings.breakpoints[widthOfScreen].nav
 		} else {
 			this.isNav = this.finalSettings.nav
 		}
@@ -134,9 +145,9 @@ class GnativeSlider {
 	//for getting this.itemsCount
 	setItemsCount(isResponsive = false, widthOfScreen = undefined) {
 		if (isResponsive) {
-			if (typeof (this.finalSettings.itemsAtScreen[widthOfScreen].itemsCount) !== "number")
+			if (typeof (this.finalSettings.breakpoints[widthOfScreen].itemsCount) !== "number")
 				return false
-			this.itemsCount = this.finalSettings.itemsAtScreen[widthOfScreen].itemsCount
+			this.itemsCount = this.finalSettings.breakpoints[widthOfScreen].itemsCount
 		} else {
 			this.itemsCount = this.finalSettings.itemsCount
 		}
@@ -193,13 +204,13 @@ class GnativeSlider {
 			}
 
 			if (directionToggle) {
-				this.items[this.itemsCount].style.display = this.finalSettings.displayToShow
+				this.items[this.itemsCount].style.display = 'inline-block'
 				this.items[this.itemsCount].style.marginRight = `-${Number(this.widthItem)}px`
 				startAnimate = setInterval(forwardAnim, 5)
 			}
 			else {
 				this.items[this.items.length - 1].style.marginLeft = `-${Number(this.widthItem)}px`
-				this.items[this.items.length - 1].style.display = this.finalSettings.displayToShow
+				this.items[this.items.length - 1].style.display = 'inline-block'
 				this.itemsContainer.prepend(this.items[this.items.length - 1])
 				this.itemsContainer.style.textAlign = 'right'
 				startAnimate = setInterval(backwardAnim, 5)
@@ -219,14 +230,14 @@ class GnativeSlider {
 		}
 
 		for (let i = 0; i < this.itemsCount; i++) {
-			this.items[i].style.display = this.finalSettings.displayToShow
+			this.items[i].style.display = 'inline-block'
 		}
 	}
 
 	setIsDots(widthOfScreen = undefined) {
 		if (widthOfScreen !== undefined) {
-			if (this.finalSettings.itemsAtScreen[widthOfScreen].dots !== undefined)
-				this.isDots = this.finalSettings.itemsAtScreen[widthOfScreen].dots
+			if (this.finalSettings.breakpoints[widthOfScreen].dots !== undefined)
+				this.isDots = this.finalSettings.breakpoints[widthOfScreen].dots
 		} else {
 			this.isDots = this.finalSettings.dots
 		}
@@ -341,7 +352,7 @@ class GnativeSlider {
 
 	//for getBreakPoint()
 	getResponsiveMap() {
-		return Object.keys(this.finalSettings.itemsAtScreen)
+		return Object.keys(this.finalSettings.breakpoints)
 	}
 
 	//for getting the actual width
@@ -354,7 +365,7 @@ class GnativeSlider {
 	}
 
 	createSlider() {
-		this.preparingItemsContainer()
+		//this.preparingItemsContainer()
 
 		if (this.isResponsive()) {
 			let breakPoint = this.getBreakPoint()
@@ -496,7 +507,7 @@ class GnativeSlider {
 		this.itemsContainer.addEventListener('touchstart', this.getFirstTouch)
 		this.itemsContainer.addEventListener('touchend', this.getTouchEnd)
 
-		if (this.isNav) {
+		if (this.isNode(this.btnNext) && this.isNode(this.btnPrev)) {
 			this.btnNext.addEventListener('click', () => {
 				this.stackNext++
 				if (this.stackNext === 1 && this.stackPrev === 0) {
@@ -506,6 +517,7 @@ class GnativeSlider {
 				if (this.stackPrev !== 0)
 					this.stackPrev = 1
 			})
+
 			this.btnPrev.addEventListener('click', () => {
 				this.stackPrev++
 				if (this.stackPrev === 1 && this.stackNext === 0) {
@@ -515,6 +527,86 @@ class GnativeSlider {
 				if (this.stackNext !== 0)
 					this.stackNext = 1
 			})
+		}
+		else {
+			if (typeof settings.btnNext !== "string" || !this.isNod(document.querySelector(settings.btnNext)))
+				console.error('btnNext is a required field. Type of btnNext must be a string. The example: btnNext: ".someSection .someWrapper .someClass"')
+			if (typeof settings.btnPrev !== "string" || !this.isNod(document.querySelector(settings.btnPrev)))
+				console.error('btnPrev is a required field. Type of btnPrev must be a string. The example: btnPrev: ".someSection .someWrapper .someClass"')
+		}
+	}
+
+	validationOfTheInputObject() {
+		if (typeof this.finalSettings !== 'object')
+			throw new Error('Your options must be an object. The example: new GnativeSlider({itemsContainer: ".someSection .someWrapper .someClass"})')
+		if (typeof this.finalSettings.itemsContainer !== 'string' || !this.isNode(document.querySelector(this.finalSettings.itemsContainer)))
+			throw new Error('itemsContainer is a required field. Type of itemsContainer must be a string. The example: itemsContainer: ".someSection .someWrapper .someClass"')
+		if (typeof this.finalSettings.btnNext !== 'string' || !this.isNode(document.querySelector(this.finalSettings.btnNext)))
+			throw new Error('btnNext is a required field. Type of btnNext must be a string. The example: btnNext: ".someSection .someWrapper .someClass"')
+		if (typeof this.finalSettings.btnPrev !== 'string' || !this.isNode(document.querySelector(this.finalSettings.btnPrev)))
+			throw new Error('btnPrev is a required field. Type of btnPrev must be a string. The example: btnPrev: ".someSection .someWrapper .someClass"')
+		if (typeof this.finalSettings.dotsContainer !== 'string' || !this.isNode(document.querySelector(this.finalSettings.dotsContainer)))
+			throw new Error('dotsContainer is a required field. Type of dotsContainer must be a string. The example: dotsContainer: ".someSection .someWrapper .someClass"')
+		if (typeof this.finalSettings.exampleOfDot !== 'string' || !this.isNode(document.querySelector(this.finalSettings.exampleOfDot)))
+			throw new Error('exampleOfDot is a required field. Type of exampleOfDot must be a string. The example: exampleOfDot: ".someSection .someWrapper .someClass"')
+		if (typeof this.finalSettings.activeDotClass !== 'string')
+			throw new Error('activeDotClass is a required field. Type of activeDotClass must be a string. The example: activeDotClass: "yourActiveDotClass"')
+		if ('loop' in this.finalSettings)
+			if (typeof this.finalSettings.loop !== 'boolean')
+				throw new Error('loop is not a required field. The default value is true. Type of loop must be a boolean. The example: loop: false')
+		if ('animationTime' in this.finalSettings)
+			if (typeof this.finalSettings.animationTime !== 'number')
+				throw new Error('animationTime is not a required field. The default value is 200 ms. Type of loop must be a number. The example: animationTime: 200')
+		if ('margin' in this.finalSettings)
+			if (typeof this.finalSettings.margin !== 'string')
+				throw new Error('margin is not a required field. The default value is 5px. Also margin can only be in pixels. Type of margin must be a string. The example: margin: "5px"')
+		if ('nav' in this.finalSettings)
+			if (typeof this.finalSettings.nav !== 'boolean')
+				throw new Error('nav is not a required field. The default value is true. Type of nav must be a boolean. The example: nav: true')
+		if ('dots' in this.finalSettings)
+			if (typeof this.finalSettings.dots !== 'boolean')
+				throw new Error('dots is not a required field. The default value is true. Type of dots must be a boolean. The example: dots: true')
+		if ('itemsCount' in this.finalSettings)
+			if (typeof this.finalSettings.itemsCount !== 'number')
+				throw new Error('itemsCount is not a required field. The default value is 1. Type of itemsCount must be a number. The example: itemsCount: 1')
+		if ('responsive' in this.finalSettings)
+			if (typeof this.finalSettings.responsive !== 'boolean')
+				throw new Error('responsive is not a required field. The default value is false. Type of responsive must be a boolean. The example: responsive: true')
+		if ('breakpoints' in this.finalSettings) {
+			for (let key in this.finalSettings.breakpoints) {
+				//check of the key
+				if (typeof key !== 'string')
+					throw new Error('Type of key of breakpoints must be a string. The example: breakpoints: "1100": {dots: true, nav: true}')
+				if (isNaN(Number(key)))
+					throw new Error('key of breakpoints must be a number but represented as a string. The example: breakpoints: "1100": {dots: true, nav: true}')
+				if (typeof this.finalSettings.breakpoints[key] !== "object") {
+					throw new Error('keys of breakpoints must contains objects. The example: breakpoints: "1100": {dots: true, nav: true}, "960": {dots: false, nav: true}')
+				}
+				//check of the object inside the key
+				else {
+					if ('itemsCount' in this.finalSettings.breakpoints[key]) {
+						if (typeof this.finalSettings.breakpoints[key].itemsCount !== 'number')
+							throw new Error('Error in breakpoints.' + key + '. Type of itemsCount must be a number. The example: itemsCount: 1')
+					}
+					else {
+						throw new Error('itemsCount in breakpoints is a required field. Type of itemsCount must be a number. The example: itemsCount: 1')
+					}
+					if ('dots' in this.finalSettings.breakpoints[key]) {
+						if (typeof this.finalSettings.breakpoints[key].dots !== 'boolean')
+							throw new Error('Error in breakpoints.' + key + '. Type of dots must be a boolean. The example: dots: true')
+					}
+					else {
+						throw new Error('dots in breakpoints is a required field. Type of dots must be a boolean. The example: dots: true')
+					}
+					if ('nav' in this.finalSettings.breakpoints[key]) {
+						if (typeof this.finalSettings.breakpoints[key].nav !== 'boolean')
+							throw new Error('Error in breakpoints.' + key + '. Type of nav must be a boolean. The example: nav: true')
+					}
+					else {
+						throw new Error('dots in breakpoints is a required field. Type of nav must be a boolean. The example: nav: true')
+					}
+				}
+			}
 		}
 	}
 }

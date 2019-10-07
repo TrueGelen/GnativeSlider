@@ -1,0 +1,38 @@
+* {
+	box-sizing: border-box;
+}
+
+.someSection{
+	position: relative;
+	width: 100%;
+	background-color: rgb(155, 97, 209);
+}
+
+.slider{
+ position: relative;
+ margin: 0 auto;
+}
+
+.items{
+
+}
+
+.item{
+
+}
+
+.dotsContainer{
+
+}
+
+.exampleOfDot{
+
+}
+
+.buttons{
+
+}
+
+.button{
+
+}
