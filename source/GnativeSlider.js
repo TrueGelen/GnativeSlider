@@ -1,3 +1,6 @@
+//import regeneratorRuntime from "regenerator-runtime";
+
+//export default class GnativeSlider {
 class GnativeSlider {
 	constructor(settings) {
 		this.defaultSettings = {
@@ -14,8 +17,12 @@ class GnativeSlider {
 			activeDotClass: undefined,
 			itemsCount: 1,
 			responsive: false,
-			breakpoints: {}
+			breakpoints: {},
+			validation: false
 		}
+
+		if (settings.validation)
+			this.validationOfTheInputObject(settings)
 
 		this.finalSettings = this.mergeSettings(this.defaultSettings, settings)
 
@@ -34,7 +41,8 @@ class GnativeSlider {
 		this.btnNext = document.querySelector(this.finalSettings.btnNext)
 		this.btnPrev = document.querySelector(this.finalSettings.btnPrev)
 		//to show buttons
-		this.displayOfButtons = this.getPropertyOfElement(this.btnNext, 'display')
+		if (this.isNode(this.btnNext))
+			this.displayOfButtons = this.getPropertyOfElement(this.btnNext, 'display')
 
 		//the map of references for active dots and items of slide
 		this.arrActiveDots = [0]
@@ -59,6 +67,17 @@ class GnativeSlider {
 
 
 		return this
+	}
+
+	doSlide(element, direction) {
+		if (direction === 'next')
+			element.addEventListener('click', () => {
+				this.createClickNext()
+			})
+		else if (direction === 'prev')
+			element.addEventListener('click', () => {
+				this.createClickPrev()
+			})
 	}
 
 	getPropertyOfElement(element, property) {
@@ -500,6 +519,26 @@ class GnativeSlider {
 		}
 	}
 
+	createClickNext = () => {
+		this.stackNext++
+		if (this.stackNext === 1 && this.stackPrev === 0) {
+			this.stackWatcher()
+		}
+
+		if (this.stackPrev !== 0)
+			this.stackPrev = 1
+	}
+
+	createClickPrev = () => {
+		this.stackPrev++
+		if (this.stackPrev === 1 && this.stackNext === 0) {
+			this.stackWatcher()
+		}
+
+		if (this.stackNext !== 0)
+			this.stackNext = 1
+	}
+
 	setEventListeners() {
 		if (this.finalSettings.responsive) {
 			window.addEventListener('resize', () => {
@@ -510,100 +549,86 @@ class GnativeSlider {
 		this.itemsContainer.addEventListener('touchstart', this.getFirstTouch)
 		this.itemsContainer.addEventListener('touchend', this.getTouchEnd)
 
+		//to not give a fatal error. There is the validationOfTheInputObject ror checking the input object
 		if (this.isNode(this.btnNext) && this.isNode(this.btnPrev)) {
-			this.btnNext.addEventListener('click', () => {
-				this.stackNext++
-				if (this.stackNext === 1 && this.stackPrev === 0) {
-					this.stackWatcher()
-				}
+			this.btnNext.addEventListener('click', this.createClickNext)
 
-				if (this.stackPrev !== 0)
-					this.stackPrev = 1
-			})
-
-			this.btnPrev.addEventListener('click', () => {
-				this.stackPrev++
-				if (this.stackPrev === 1 && this.stackNext === 0) {
-					this.stackWatcher()
-				}
-
-				if (this.stackNext !== 0)
-					this.stackNext = 1
-			})
-		}
-		else {
-			if (typeof settings.btnNext !== "string" || !this.isNod(document.querySelector(settings.btnNext)))
-				console.error('btnNext is a required field. Type of btnNext must be a string. The example: btnNext: ".someSection .someWrapper .someClass"')
-			if (typeof settings.btnPrev !== "string" || !this.isNod(document.querySelector(settings.btnPrev)))
-				console.error('btnPrev is a required field. Type of btnPrev must be a string. The example: btnPrev: ".someSection .someWrapper .someClass"')
+			this.btnPrev.addEventListener('click', this.createClickPrev)
 		}
 	}
 
-	validationOfTheInputObject() {
-		if (typeof this.finalSettings !== 'object')
+	validationOfTheInputObject(settings) {
+		let validateNav = () => {
+			if (typeof settings.btnNext !== 'string' || !this.isNode(document.querySelector(settings.btnNext)))
+				throw new Error('Type of btnNext must be a string. The example: btnNext: ".someSection .someWrapper .someClass"')
+			if (typeof settings.btnPrev !== 'string' || !this.isNode(document.querySelector(settings.btnPrev)))
+				throw new Error('Type of btnPrev must be a string. The example: btnPrev: ".someSection .someWrapper .someClass"')
+		}
+
+		if (typeof settings !== 'object')
 			throw new Error('Your options must be an object. The example: new GnativeSlider({itemsContainer: ".someSection .someWrapper .someClass"})')
-		if (typeof this.finalSettings.itemsContainer !== 'string' || !this.isNode(document.querySelector(this.finalSettings.itemsContainer)))
+		if (typeof settings.itemsContainer !== 'string' || !this.isNode(document.querySelector(settings.itemsContainer)))
 			throw new Error('itemsContainer is a required field. Type of itemsContainer must be a string. The example: itemsContainer: ".someSection .someWrapper .someClass"')
-		if (typeof this.finalSettings.btnNext !== 'string' || !this.isNode(document.querySelector(this.finalSettings.btnNext)))
-			throw new Error('btnNext is a required field. Type of btnNext must be a string. The example: btnNext: ".someSection .someWrapper .someClass"')
-		if (typeof this.finalSettings.btnPrev !== 'string' || !this.isNode(document.querySelector(this.finalSettings.btnPrev)))
-			throw new Error('btnPrev is a required field. Type of btnPrev must be a string. The example: btnPrev: ".someSection .someWrapper .someClass"')
-		if (typeof this.finalSettings.dotsContainer !== 'string' || !this.isNode(document.querySelector(this.finalSettings.dotsContainer)))
+		if (settings.nav === true)
+			validateNav()
+		if (typeof settings.dotsContainer !== 'string' || !this.isNode(document.querySelector(settings.dotsContainer)))
 			throw new Error('dotsContainer is a required field. Type of dotsContainer must be a string. The example: dotsContainer: ".someSection .someWrapper .someClass"')
-		if (typeof this.finalSettings.exampleOfDot !== 'string' || !this.isNode(document.querySelector(this.finalSettings.exampleOfDot)))
+		if (typeof settings.exampleOfDot !== 'string' || !this.isNode(document.querySelector(settings.exampleOfDot)))
 			throw new Error('exampleOfDot is a required field. Type of exampleOfDot must be a string. The example: exampleOfDot: ".someSection .someWrapper .someClass"')
-		if (typeof this.finalSettings.activeDotClass !== 'string')
+		if (typeof settings.activeDotClass !== 'string')
 			throw new Error('activeDotClass is a required field. Type of activeDotClass must be a string. The example: activeDotClass: "yourActiveDotClass"')
-		if ('loop' in this.finalSettings)
-			if (typeof this.finalSettings.loop !== 'boolean')
+		if ('loop' in settings)
+			if (typeof settings.loop !== 'boolean')
 				throw new Error('loop is not a required field. The default value is true. Type of loop must be a boolean. The example: loop: false')
-		if ('animationTime' in this.finalSettings)
-			if (typeof this.finalSettings.animationTime !== 'number')
+		if ('animationTime' in settings)
+			if (typeof settings.animationTime !== 'number')
 				throw new Error('animationTime is not a required field. The default value is 200 ms. Type of loop must be a number. The example: animationTime: 200')
-		if ('margin' in this.finalSettings)
-			if (typeof this.finalSettings.margin !== 'string')
+		if ('margin' in settings)
+			if (typeof settings.margin !== 'string')
 				throw new Error('margin is not a required field. The default value is 5px. Also margin can only be in pixels. Type of margin must be a string. The example: margin: "5px"')
-		if ('nav' in this.finalSettings)
-			if (typeof this.finalSettings.nav !== 'boolean')
+		if ('nav' in settings)
+			if (typeof settings.nav !== 'boolean')
 				throw new Error('nav is not a required field. The default value is true. Type of nav must be a boolean. The example: nav: true')
-		if ('dots' in this.finalSettings)
-			if (typeof this.finalSettings.dots !== 'boolean')
+		if ('dots' in settings)
+			if (typeof settings.dots !== 'boolean')
 				throw new Error('dots is not a required field. The default value is true. Type of dots must be a boolean. The example: dots: true')
-		if ('itemsCount' in this.finalSettings)
-			if (typeof this.finalSettings.itemsCount !== 'number')
+		if ('itemsCount' in settings)
+			if (typeof settings.itemsCount !== 'number')
 				throw new Error('itemsCount is not a required field. The default value is 1. Type of itemsCount must be a number. The example: itemsCount: 1')
-		if ('responsive' in this.finalSettings)
-			if (typeof this.finalSettings.responsive !== 'boolean')
+		if ('responsive' in settings)
+			if (typeof settings.responsive !== 'boolean')
 				throw new Error('responsive is not a required field. The default value is false. Type of responsive must be a boolean. The example: responsive: true')
-		if ('breakpoints' in this.finalSettings) {
-			for (let key in this.finalSettings.breakpoints) {
+		if ('breakpoints' in settings) {
+			for (let key in settings.breakpoints) {
 				//check of the key
 				if (typeof key !== 'string')
 					throw new Error('Type of key of breakpoints must be a string. The example: breakpoints: "1100": {dots: true, nav: true}')
 				if (isNaN(Number(key)))
 					throw new Error('key of breakpoints must be a number but represented as a string. The example: breakpoints: "1100": {dots: true, nav: true}')
-				if (typeof this.finalSettings.breakpoints[key] !== "object") {
+				if (typeof settings.breakpoints[key] !== "object") {
 					throw new Error('keys of breakpoints must contains objects. The example: breakpoints: "1100": {dots: true, nav: true}, "960": {dots: false, nav: true}')
 				}
 				//check of the object inside the key
 				else {
-					if ('itemsCount' in this.finalSettings.breakpoints[key]) {
-						if (typeof this.finalSettings.breakpoints[key].itemsCount !== 'number')
+					if ('itemsCount' in settings.breakpoints[key]) {
+						if (typeof settings.breakpoints[key].itemsCount !== 'number')
 							throw new Error('Error in breakpoints.' + key + '. Type of itemsCount must be a number. The example: itemsCount: 1')
 					}
 					else {
 						throw new Error('itemsCount in breakpoints is a required field. Type of itemsCount must be a number. The example: itemsCount: 1')
 					}
-					if ('dots' in this.finalSettings.breakpoints[key]) {
-						if (typeof this.finalSettings.breakpoints[key].dots !== 'boolean')
+					if ('dots' in settings.breakpoints[key]) {
+						if (typeof settings.breakpoints[key].dots !== 'boolean')
 							throw new Error('Error in breakpoints.' + key + '. Type of dots must be a boolean. The example: dots: true')
 					}
 					else {
 						throw new Error('dots in breakpoints is a required field. Type of dots must be a boolean. The example: dots: true')
 					}
-					if ('nav' in this.finalSettings.breakpoints[key]) {
-						if (typeof this.finalSettings.breakpoints[key].nav !== 'boolean')
+					if ('nav' in settings.breakpoints[key]) {
+						if (typeof settings.breakpoints[key].nav !== 'boolean')
 							throw new Error('Error in breakpoints.' + key + '. Type of nav must be a boolean. The example: nav: true')
+						else if (settings.breakpoints[key].nav)
+							validateNav()
 					}
 					else {
 						throw new Error('dots in breakpoints is a required field. Type of nav must be a boolean. The example: nav: true')

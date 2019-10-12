@@ -1,6 +1,8 @@
+//import GnativeSlider from '../GnativeSlider'
+
 window.addEventListener('load', () => {
 
-	new GnativeSlider({
+	let slider = new GnativeSlider({
 		loop: true,
 		itemsContainer: '.someSection .slider .items',
 		animationTime: 200,
@@ -22,15 +24,24 @@ window.addEventListener('load', () => {
 			},
 			'960': {
 				itemsCount: 2,
-				nav: true,
+				nav: false,
 				dots: false
 			},
 			'780': {
 				itemsCount: 1,
-				nav: true,
+				nav: false,
 				dots: true
 			}
-		}
-	}).createSlider()
+		},
+		validation: true
+	})
+	slider.createSlider()
+
+	const secondaryBtnNext = document.querySelector('.someSection .otherButtons .otherButtons_button-next')
+	const secondaryBtnPrev = document.querySelector('.someSection .otherButtons .otherButtons_button-prev')
+
+
+	slider.doSlide(secondaryBtnNext, 'next')
+	slider.doSlide(secondaryBtnPrev, 'prev')
 
 })

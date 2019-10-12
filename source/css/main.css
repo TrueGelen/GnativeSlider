@@ -33,7 +33,7 @@
  	position: relative;
 	width: 80%;
 	margin: auto;
-	padding: 15px 80px;
+	/* padding: 15px 80px; */
 }
 
 .item{
@@ -80,4 +80,46 @@
 
 .button:active{
 	background-color: aquamarine;
+}
+
+
+
+.otherButtons{
+	margin-top: 20px;
+	text-align: center;
+	font-size: 0;
+}
+
+.otherButtons .otherButtons_button-next{
+	display: inline-block;
+	width: calc(40% - 5px);
+	margin-left: 5px;
+	height: 60px;
+	background-color: chartreuse;
+	border-radius: 5px;
+	text-align: center;
+	line-height: 60px;
+	font-size: 30px;
+	cursor: pointer;
+}
+
+.otherButtons .otherButtons_button-prev{
+	display: inline-block;
+	width: calc(40% - 5px);
+	margin-right: 5px;
+	height: 60px;
+	background-color: chartreuse;
+	border-radius: 5px;
+	text-align: center;
+	line-height: 60px;
+	font-size: 30px;
+	cursor: pointer;
+}
+
+.otherButtons .otherButtons_button-prev:active{
+	background-color: rgba(130, 204, 57, 0.541);
+}
+
+.otherButtons .otherButtons_button-next:active{
+	background-color: rgba(130, 204, 57, 0.541);
 }
