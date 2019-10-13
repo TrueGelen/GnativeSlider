@@ -80,8 +80,8 @@ new GnativeSlider({
   #### The expample:
   
   ````js
-  let Gslider = new GnativeSlider({...})
-	Gslider.createSlider()
+  let slider = new GnativeSlider({...})
+	slider.createSlider()
 
 	const secondaryBtnNext = document.querySelector('.someSection .otherButtons .otherButtons_button-next')
 	const secondaryBtnPrev = document.querySelector('.someSection .otherButtons .otherButtons_button-prev')
