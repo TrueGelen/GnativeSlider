@@ -20,7 +20,7 @@ new GnativeSlider({
 		dots: true,
 		responsive: true,
 		breakpoints: {
-			'1100': {         //all fields inside curly brackets of breakpoint are required
+			'1100': {//all fields inside curly brackets of breakpoint are required
 				itemsCount: 3,
 				nav: false,
 				dots: true
