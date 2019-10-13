@@ -1,6 +1,6 @@
 # GnativeSlider
-This is a responsive slider which was created on native js.
----------------------------------
+#### This is a responsive slider which was created on native js.
+
 Usage
 -----------------------------
 #### The expamle:
