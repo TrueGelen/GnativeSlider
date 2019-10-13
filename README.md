@@ -2,8 +2,8 @@
 This is a responsive slider which was created on native js.
 ---------------------------------
 Usage
-================================
-###Expamle:
+-----------------------------
+### The expamle:
 ````js
 new GnativeSlider({
 		loop: false,
@@ -39,32 +39,44 @@ new GnativeSlider({
 	}).createSlider()
   ````
   
-  Default settings
-  ----------------------
+  ### Default settings
+  
 ````js
-  this.defaultSettings = {		//TYPE				//POSSIBLE VALUES													           //NECESSARY TO FILL
-	loop: true,									//boolean. 		//true, false
-	itemsContainer: undefined,	//string.		  //the example:'.someSection .someWrapper .someClass' //a required field
-	animationTime: 200,     		//number.			//milliseconds
-	margin: '5px',							//string. 		//The example: '5px'
-	nav: true,									//boolean.		//true, false
-	btnNext: undefined,					//string.		  //the example:'.someSection .someWrapper .someClass'	//a required field if nav === true
-	btnPrev: undefined,					//string.		  //the example:'.someSection .someWrapper .someClass'	//a required field if nav === true
-	dots: true,									//boolean.
-	dotsContainer: undefined,		//string.		  //the example:'.someSection .someWrapper .someClass'	//a required field if dots === true
-	exampleOfDot: undefined,		//string.		  //the example:'.someSection .someWrapper .someClass'	//a required field if dots === true
-	activeDotClass: undefined,	//string.			//the example: 'yourShowClass'											  //a required field if dots === true
-	itemsCount: 1,							//number			//just a number of count on first screen
-	responsive: false,					//boolean.		//true, false
-  breakpoints: {},						//object 		  //the example: //'1100':{itemsCount: 3,nav: true,dots: true},
-                                                           // '960':{itemsCount: 2,nav: true,dots: true}
-  validation: false           //boolean.   // if you want to validate your input object, when you did it, set false
+  this.defaultSettings = {
+  //boolean
+	loop: true,
+//string	//the example:'.someSection .someWrapper .someClass' 	//a required field
+	itemsContainer: undefined,
+//number	//milliseconds
+	animationTime: 200,
+//string 	//The example: '5px'
+	margin: '5px',
+//boolean
+	nav: true,
+//string	//the example:'.someSection .someWrapper .someClass'	//a required field if nav === true
+	btnNext: undefined,
+	btnPrev: undefined,
+//booleam
+	dots: true,
+//string	//the example:'.someSection .someWrapper .someClass'	//a required field if dots === true
+	dotsContainer: undefined,
+//string	//the example:'.someSection .someWrapper .someClass'	//a required field if dots === true
+	exampleOfDot: undefined,
+//string	//the example: 'yourShowClass'				//a required field if dots === true
+	activeDotClass: undefined,
+//number	//just a number of count on first screen
+	itemsCount: 1,
+//boolean
+	responsive: false,
+//object	//the exam.: //'1100':{itemsCount: 3,nav: true,dots: true}, '960':{itemsCount: 2,nav: true,dots: true}
+  breakpoints: {},
+ //boolean	// if you want to validate your input object, when you did it, set false
+  validation: false
   }
   ````
   
-  If you want to have more buttons, you can use method "doSlide(nodeElement, 'direction')":
-  --------------------
-  ### The expample:
+  ### If you want to have more buttons, you can use method "doSlide(nodeElement, 'direction')":
+  #### The expample:
   
   ````js
   let Gslider = new GnativeSlider({...})
