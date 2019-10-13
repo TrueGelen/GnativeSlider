@@ -3,7 +3,7 @@ This is a responsive slider which was created on native js.
 ---------------------------------
 Usage
 -----------------------------
-### The expamle:
+#### The expamle:
 ````js
 new GnativeSlider({
 		loop: false,
@@ -20,7 +20,7 @@ new GnativeSlider({
 		dots: true,
 		responsive: true,
 		breakpoints: {
-			'1100': {         //all fields are required
+			'1100': {         //all fields inside curly brackets of breakpoint are required
 				itemsCount: 3,
 				nav: false,
 				dots: true
@@ -43,32 +43,33 @@ new GnativeSlider({
   
 ````js
   this.defaultSettings = {
-  //boolean
+//TYPE		//POSSIBLE VALUES(expample)			//NECESSARY TO FILL
+//boolean
 	loop: true,
-//string	//the example:'.someSection .someWrapper .someClass' 	//a required field
+//string	//'.someSection .someWrapper .someClass' 	//a required field
 	itemsContainer: undefined,
 //number	//milliseconds
 	animationTime: 200,
-//string 	//The example: '5px'
+//string 	//'5px'
 	margin: '5px',
 //boolean
 	nav: true,
-//string	//the example:'.someSection .someWrapper .someClass'	//a required field if nav === true
+//string	//'.someSection .someWrapper .someClass'	//a required field if nav === true
 	btnNext: undefined,
 	btnPrev: undefined,
 //booleam
 	dots: true,
-//string	//the example:'.someSection .someWrapper .someClass'	//a required field if dots === true
+//string	//'.someSection .someWrapper .someClass'	//a required field if dots === true
 	dotsContainer: undefined,
-//string	//the example:'.someSection .someWrapper .someClass'	//a required field if dots === true
+//string	//'.someSection .someWrapper .someClass'	//a required field if dots === true
 	exampleOfDot: undefined,
-//string	//the example: 'yourShowClass'				//a required field if dots === true
+//string	//'yourShowClass'				//a required field if dots === true
 	activeDotClass: undefined,
 //number	//just a number of count on first screen
 	itemsCount: 1,
 //boolean
 	responsive: false,
-//object	//the exam.: //'1100':{itemsCount: 3,nav: true,dots: true}, '960':{itemsCount: 2,nav: true,dots: true}
+//object  //{'1100':{itemsCount: 3,nav: true,dots: true}, '960':{itemsCount: 2,nav: true,dots: true}}
   breakpoints: {},
  //boolean	// if you want to validate your input object, when you did it, set false
   validation: false
