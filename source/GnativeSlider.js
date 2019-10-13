@@ -565,18 +565,29 @@ class GnativeSlider {
 				throw new Error('Type of btnPrev must be a string. The example: btnPrev: ".someSection .someWrapper .someClass"')
 		}
 
+		let validateDots = () => {
+			if (typeof settings.dotsContainer !== 'string' || !this.isNode(document.querySelector(settings.dotsContainer)))
+				throw new Error('dotsContainer is a required field. Type of dotsContainer must be a string. The example: dotsContainer: ".someSection .someWrapper .someClass"')
+			if (typeof settings.exampleOfDot !== 'string' || !this.isNode(document.querySelector(settings.exampleOfDot)))
+				throw new Error('exampleOfDot is a required field. Type of exampleOfDot must be a string. The example: exampleOfDot: ".someSection .someWrapper .someClass"')
+			if (typeof settings.activeDotClass !== 'string')
+				throw new Error('activeDotClass is a required field. Type of activeDotClass must be a string. The example: activeDotClass: "yourActiveDotClass"')
+		}
+
 		if (typeof settings !== 'object')
 			throw new Error('Your options must be an object. The example: new GnativeSlider({itemsContainer: ".someSection .someWrapper .someClass"})')
 		if (typeof settings.itemsContainer !== 'string' || !this.isNode(document.querySelector(settings.itemsContainer)))
 			throw new Error('itemsContainer is a required field. Type of itemsContainer must be a string. The example: itemsContainer: ".someSection .someWrapper .someClass"')
+		if ('nav' in settings)
+			if (typeof settings.nav !== 'boolean')
+				throw new Error('nav is not a required field. The default value is true. Type of nav must be a boolean. The example: nav: true')
+		if ('dots' in settings)
+			if (typeof settings.dots !== 'boolean')
+				throw new Error('dots is not a required field. The default value is true. Type of dots must be a boolean. The example: dots: true')
 		if (settings.nav === true)
 			validateNav()
-		if (typeof settings.dotsContainer !== 'string' || !this.isNode(document.querySelector(settings.dotsContainer)))
-			throw new Error('dotsContainer is a required field. Type of dotsContainer must be a string. The example: dotsContainer: ".someSection .someWrapper .someClass"')
-		if (typeof settings.exampleOfDot !== 'string' || !this.isNode(document.querySelector(settings.exampleOfDot)))
-			throw new Error('exampleOfDot is a required field. Type of exampleOfDot must be a string. The example: exampleOfDot: ".someSection .someWrapper .someClass"')
-		if (typeof settings.activeDotClass !== 'string')
-			throw new Error('activeDotClass is a required field. Type of activeDotClass must be a string. The example: activeDotClass: "yourActiveDotClass"')
+		if (settings.dots === true)
+			validateDots()
 		if ('loop' in settings)
 			if (typeof settings.loop !== 'boolean')
 				throw new Error('loop is not a required field. The default value is true. Type of loop must be a boolean. The example: loop: false')
@@ -586,12 +597,6 @@ class GnativeSlider {
 		if ('margin' in settings)
 			if (typeof settings.margin !== 'string')
 				throw new Error('margin is not a required field. The default value is 5px. Also margin can only be in pixels. Type of margin must be a string. The example: margin: "5px"')
-		if ('nav' in settings)
-			if (typeof settings.nav !== 'boolean')
-				throw new Error('nav is not a required field. The default value is true. Type of nav must be a boolean. The example: nav: true')
-		if ('dots' in settings)
-			if (typeof settings.dots !== 'boolean')
-				throw new Error('dots is not a required field. The default value is true. Type of dots must be a boolean. The example: dots: true')
 		if ('itemsCount' in settings)
 			if (typeof settings.itemsCount !== 'number')
 				throw new Error('itemsCount is not a required field. The default value is 1. Type of itemsCount must be a number. The example: itemsCount: 1')
@@ -620,6 +625,8 @@ class GnativeSlider {
 					if ('dots' in settings.breakpoints[key]) {
 						if (typeof settings.breakpoints[key].dots !== 'boolean')
 							throw new Error('Error in breakpoints.' + key + '. Type of dots must be a boolean. The example: dots: true')
+						else if (settings.breakpoints[key].dots)
+							validateDots()
 					}
 					else {
 						throw new Error('dots in breakpoints is a required field. Type of dots must be a boolean. The example: dots: true')
