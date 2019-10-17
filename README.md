@@ -1,4 +1,4 @@
-# GnativeSlider
+# [GnativeSlider](https://truegelen.github.io/GnativeSlider/)
 #### This is a responsive slider which was created on native js.
 
 Usage
